@@ -1,0 +1,10 @@
+---
+
+- name: "Upload deployment files"
+  copy:
+    src: app.yaml
+    dest: /tmp/
+
+- name: Desplegamos la aplicacion
+  become: yes
+  shell: kubectl apply -f /tmp/app.yaml

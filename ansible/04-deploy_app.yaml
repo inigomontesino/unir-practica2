@@ -1,0 +1,6 @@
+---
+- name: "Install App"
+  hosts: master
+  gather_facts: false
+  roles:
+    - install-app

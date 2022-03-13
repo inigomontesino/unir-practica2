@@ -1,0 +1,86 @@
+---
+
+- name: FirewallD rules
+  firewalld:
+    permanent: yes
+    immediate: yes
+    port: "{{ item }}"
+    state: enabled
+  become: yes
+  loop:
+    - 6443/tcp
+    - 2379-2380/tcp
+    - 10250-10252/tcp
+    - 10255/tcp
+    - 8285/udp
+    - 8472/udp
+  notify: reload firewalld
+
+- name: "Check if k8s config file exists"
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: k8s_install_result
+
+- name: Configuramos kudeadm
+  command: "kubeadm config images pull --cri-socket /var/run/crio/crio.sock"
+  become: yes
+  when: not k8s_install_result.stat.exists
+
+- name: "Initializing Kubernetes cluster"
+  shell: "kubeadm init --pod-network-cidr 192.169.0.0/16 --cri-socket /var/run/crio/crio.sock"
+  become: yes
+  when: not k8s_install_result.stat.exists
+
+- name: "Get join token"
+  become: yes
+  shell: "kubeadm token create --print-join-command"
+  register: kube_token
+
+- name: "Save join"
+  set_fact:
+         kube_token: "{{kube_token.stdout_lines[0]}}"
+
+- name: "Copying required files"
+  become: yes
+  shell: |
+    mkdir -p $HOME/.kube
+    cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
+    chown $(id -u):$(id -g) $HOME/.kube/config
+
+- name: "Install SDN"
+  command: kubectl apply -f https://docs.projectcalico.org/manifests/canal.yaml
+  become: yes
+  when: not k8s_install_result.stat.exists
+
+- name: "Install Ingress"
+  command: kubectl apply -f https://raw.githubusercontent.com/haproxytech/kubernetes-ingress/v1.7/deploy/haproxy-ingress.yaml
+  become: yes
+  when: not k8s_install_result.stat.exists
+
+- name: "FirewallD rules"
+  firewalld:
+    permanent: yes
+    immediate: yes
+    rich_rule: "rule family=ipv4 source address=10.0.0.0/16 accept"
+    state: enabled
+  become: yes
+  notify: reload firewalld
+
+- name: "Create kubeadmin user"
+  become: yes
+  user:
+    name: kubeadmin
+    password: "{{ user_password | password_hash('sha512') }}"
+    append: yes
+
+- name: "Copying required files"
+  become: yes
+  shell: |
+    mkdir -p /home/kubeadmin/.kube
+    cp -f /etc/kubernetes/admin.conf /home/kubeadmin/.kube/config
+    chown kubeadmin:kubeadmin /home/kubeadmin/.kube/config
+    cat <<EOF > /etc/sudoers.d/kubeadmin
+
+- name: "Reboot"
+  reboot:
+  become: yes

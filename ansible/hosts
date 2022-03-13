@@ -1,0 +1,14 @@
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_user=imontesino
+ansible_ssh_private_key_file=~/.ssh/imontesino.pk
+ansible_ssh_extra_args='-o StrictHostKeyChecking=no'
+
+[master]
+master-k8s-imv.westeurope.cloudapp.azure.com
+
+[worker]
+k8s-worker-01-imv.westeurope.cloudapp.azure.com
+
+[nfs]
+nfs-imv.westeurope.cloudapp.azure.com

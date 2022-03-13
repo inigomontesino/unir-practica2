@@ -1,0 +1,8 @@
+---
+- name: "Install k8s Commons"
+  hosts: master, worker
+  vars_files:
+    - "group_vars/k8s.yaml"
+  gather_facts: false
+  roles:
+    - k8s-commons

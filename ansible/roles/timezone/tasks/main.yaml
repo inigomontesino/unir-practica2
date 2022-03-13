@@ -1,0 +1,23 @@
+---
+
+- name: "Setting correct timezone"
+  command: "timedatectl set-timezone Europe/Madrid"
+  become: yes
+
+- name: "Install time package"
+  dnf:
+    name: "chrony"
+    state: present
+  become: yes
+
+- name: "Configure time package"
+  systemd:
+    name: chronyd
+    state: started
+    enabled: yes
+    masked: no
+  become: yes
+
+- name: "Sync time"
+  command: "timedatectl set-ntp true"
+  become: yes

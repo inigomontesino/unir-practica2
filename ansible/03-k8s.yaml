@@ -1,0 +1,13 @@
+---
+- name: "Install master"
+  hosts: master
+  gather_facts: false
+  roles:
+    - k8s-master
+  vars_files:
+    - "group_vars/k8s.yaml"
+- name: "Install worker"
+  hosts: worker
+  gather_facts: false
+  roles:
+    - k8s-worker

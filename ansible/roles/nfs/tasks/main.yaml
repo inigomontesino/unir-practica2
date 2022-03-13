@@ -1,0 +1,63 @@
+---
+
+- name: "Install NFS service"
+  dnf:
+    name: "{{ nfs_server }}"
+    state: present
+  become: yes
+
+- name: "Ensure Services are started"
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+    masked: no
+  become: yes
+  loop:
+    - firewalld
+    - nfs-server
+
+- name: "Create NFS root directory"
+  ansible.builtin.file:
+    path: /srv/nfs
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: "Copy exports file"
+  become: true
+  copy:
+    src: exports
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "Run exports reload_01"
+  command: "exportfs -r"
+  become: yes
+
+- name: "Run exports reload_02"
+  command: "exportfs -s"
+  become: yes
+
+- name: "Ensure FirewallD is enabled"
+  firewalld:
+    permanent: yes
+    masquerade: yes
+    state: enabled
+  become: yes
+  notify: reload firewalld
+
+- name: "Configure FirewallD rules"
+  firewalld:
+    permanent: yes
+    immediate: yes
+    service: "{{ item }}"
+    state: enabled
+  become: yes
+  loop:
+    - nfs
+    - rpc-bind
+    - mountd
+  notify: reload firewalld

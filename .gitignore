@@ -1,0 +1,7 @@
+**/keys
+**/.terraform
+**/*.pem
+**/credentials.tf
+**/.DS_Store
+.vscode/
+**/.terraform.lock.hcl

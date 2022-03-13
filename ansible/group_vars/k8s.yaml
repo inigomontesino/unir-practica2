@@ -1,0 +1,4 @@
+---
+
+k8s_deps: ['nfs-utils','nfs4-acl-tools','wget','cri-o']
+user_password: "Hdnbe7TsfR"

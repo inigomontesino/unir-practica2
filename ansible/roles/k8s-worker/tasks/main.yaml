@@ -1,0 +1,29 @@
+---
+
+- name: "Configure rules"
+  firewalld:
+    permanent: yes
+    immediate: yes
+    port: "{{ item }}"
+    state: enabled
+  become: yes
+  loop:
+    - 10250/tcp
+    - 30000-32767/tcp
+    - 8285/udp
+    - 8472/udp
+  notify: reload firewalld
+
+- name: "Check if k8s cert file exists"
+  stat:
+    path:  /etc/kubernetes/pki/ca.crt
+  register: k8s_cert_result
+
+- name: "Get master token and apply"
+  become: yes
+  shell: "{{hostvars['master-k8s-imv.westeurope.cloudapp.azure.com']['kube_token']}}"
+  when: not k8s_cert_result.stat.exists
+
+- name: "Reboot"
+  reboot:
+  become: yes
